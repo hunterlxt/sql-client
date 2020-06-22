@@ -30,10 +30,10 @@ var (
 		c5 char(64)
 	)
 	PARTITION BY RANGE (id) (
-		PARTITION p0 VALUES LESS THAN (10000),
-		PARTITION p1 VALUES LESS THAN (20000),
-		PARTITION p2 VALUES LESS THAN (30000),
-		PARTITION p3 VALUES LESS THAN (40000),
+		PARTITION p0 VALUES LESS THAN (5000),
+		PARTITION p1 VALUES LESS THAN (10000),
+		PARTITION p2 VALUES LESS THAN (15000),
+		PARTITION p3 VALUES LESS THAN (20000),
 		PARTITION p4 VALUES LESS THAN MAXVALUE
 	)`
 	sql2 = `insert into t values`
@@ -49,14 +49,24 @@ func main() {
 
 	fmt.Println("stop?")
 	fmt.Scanln()
-	stop_partition(db)
-	fmt.Println("partition drop?")
+	stop_all(db)
+
+	fmt.Println("ready to insert p0?")
+	fmt.Scanln()
+	*concurrent = 64
+	*batch = 1
+	shared_flag[0] = false
+	insert_data_job(db, 0)
+
+	fmt.Println("partition drop p2 p3 p4?")
 	fmt.Scanln()
 	drop_partition(db, 2)
 	drop_partition(db, 3)
 	drop_partition(db, 4)
+
 	fmt.Println("Enter to exit")
 	fmt.Scanln()
+
 }
 
 func connect(ip string, port int, db string) *sql.DB {
@@ -86,8 +96,8 @@ func drop_partition(db *sql.DB, num int) {
 	}
 }
 
-func stop_partition(db *sql.DB) {
-	for i := 1; i < 5; i++ {
+func stop_all(db *sql.DB) {
+	for i := 0; i < 5; i++ {
 		shared_flag[i] = true
 	}
 }
@@ -111,7 +121,7 @@ func insert_data_job(db *sql.DB, part_num int) {
 		go func() {
 			str := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+"
 			for {
-				id := part_num*10000 + rand.Intn(10000)
+				id := part_num*5000 + rand.Intn(5000)
 				insert_sql := sql2
 				for i := 0; i < local_batch; i++ {
 					if i == local_batch-1 {
