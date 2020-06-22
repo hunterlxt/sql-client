@@ -97,22 +97,24 @@ func insert_data_job(db *sql.DB, concurrent int, batch int, part_num int) {
 			fmt.Println(err)
 		}
 		go func() {
-			id := part_num*10000 + rand.Intn(10000)
 			str := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+"
-			insert_sql := sql2
-			for i := 0; i < batch; i++ {
-				if i == batch-1 {
-					insert_sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v')", id+i, str, str, str, str, str)
-					break
-				} else {
-					insert_sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v'),", id+i, str, str, str, str, str)
+			for {
+				id := part_num*10000 + rand.Intn(10000)
+				insert_sql := sql2
+				for i := 0; i < batch; i++ {
+					if i == batch-1 {
+						insert_sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v')", id+i, str, str, str, str, str)
+						break
+					} else {
+						insert_sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v'),", id+i, str, str, str, str, str)
+					}
 				}
+				ret, err := conn.ExecContext(context.Background(), insert_sql)
+				if err != nil {
+					fmt.Println(err)
+				}
+				ret.RowsAffected()
 			}
-			ret, err := conn.ExecContext(context.Background(), insert_sql)
-			if err != nil {
-				fmt.Println(err)
-			}
-			ret.RowsAffected()
 		}()
 	}
 }
