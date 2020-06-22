@@ -17,7 +17,8 @@ var (
 	db_name     = flag.String("db", "test", "db")
 	concurrent  = flag.Int("concurrent", 16, "concurrent")
 	batch       = flag.Int("batch", 32, "batch")
-	shared_flag = [5]bool{false}
+	shared_flag = [4]bool{false}
+	timer       = time.NewTimer(1 * time.Second)
 )
 
 var (
@@ -33,8 +34,7 @@ var (
 		PARTITION p0 VALUES LESS THAN (5000),
 		PARTITION p1 VALUES LESS THAN (10000),
 		PARTITION p2 VALUES LESS THAN (15000),
-		PARTITION p3 VALUES LESS THAN (20000),
-		PARTITION p4 VALUES LESS THAN MAXVALUE
+		PARTITION p3 VALUES LESS THAN MAXVALUE
 	)`
 	sql2 = `insert into t values`
 	sql3 = `ALTER TABLE t DROP PARTITION `
@@ -47,22 +47,23 @@ func main() {
 	create_table(db)
 	insert_data(db)
 
-	fmt.Println("stop?")
-	fmt.Scanln()
+	timer.Reset(10 * time.Hour)
+	<-timer.C
 	stop_all(db)
 
-	fmt.Println("ready to insert p0?")
-	fmt.Scanln()
+	timer.Reset(1 * time.Minute)
+	<-timer.C
 	*concurrent = 64
 	*batch = 1
 	shared_flag[0] = false
 	insert_data_job(db, 0)
 
-	fmt.Println("partition drop p2 p3 p4?")
-	fmt.Scanln()
+	fmt.Println("partition drop p1 p2 p3?")
+	timer.Reset(30 * time.Minute)
+	<-timer.C
+	drop_partition(db, 1)
 	drop_partition(db, 2)
 	drop_partition(db, 3)
-	drop_partition(db, 4)
 
 	fmt.Println("Enter to exit")
 	fmt.Scanln()
@@ -97,7 +98,7 @@ func drop_partition(db *sql.DB, num int) {
 }
 
 func stop_all(db *sql.DB) {
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 4; i++ {
 		shared_flag[i] = true
 	}
 }
@@ -107,7 +108,6 @@ func insert_data(db *sql.DB) {
 	insert_data_job(db, 1)
 	insert_data_job(db, 2)
 	insert_data_job(db, 3)
-	insert_data_job(db, 4)
 	fmt.Println("All insert job started...")
 }
 
