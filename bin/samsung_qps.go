@@ -15,8 +15,8 @@ var (
 	ip          = flag.String("ip", "127.0.0.1", "ip")
 	port        = flag.Int("port", 10000, "port")
 	db_name     = flag.String("db", "test", "db")
-	concurrent  = flag.Int("concurrent", 8, "concurrent")
-	batch       = flag.Int("batch", 2, "batch")
+	concurrent  = flag.Int("concurrent", 16, "concurrent")
+	batch       = flag.Int("batch", 32, "batch")
 	shared_flag = [5]bool{false}
 )
 
