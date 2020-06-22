@@ -47,13 +47,12 @@ func main() {
 	create_table(db)
 	insert_data(db)
 
-	fmt.Println("1. Which partition do you want to drop? [0~4]:")
-	var num int
-	fmt.Scan(&num)
-	drop_partition(db, num)
-	fmt.Println("2. Which partition do you want to drop? [0~4]:")
-	fmt.Scan(&num)
-	drop_partition(db, num)
+	fmt.Println("stop?")
+	fmt.Scanln()
+	stop_partition(db)
+	fmt.Println("partition drop?")
+	fmt.Scanln()
+	drop_partition(db, 0)
 	fmt.Println("Enter to exit")
 	fmt.Scanln()
 }
@@ -78,11 +77,16 @@ func create_table(db *sql.DB) {
 }
 
 func drop_partition(db *sql.DB, num int) {
-	shared_flag[num] = true
 	sql := sql3 + fmt.Sprintf("p%v", num)
 	_, err := db.Exec(sql)
 	if err != nil {
 		fmt.Println(err)
+	}
+}
+
+func stop_partition(db *sql.DB) {
+	for i := 1; i < 5; i++ {
+		shared_flag[i] = true
 	}
 }
 
