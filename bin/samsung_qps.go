@@ -15,6 +15,8 @@ var (
 	ip          = flag.String("ip", "127.0.0.1", "ip")
 	port        = flag.Int("port", 10000, "port")
 	db_name     = flag.String("db", "test", "db")
+	concurrent  = flag.Int("concurrent", 8, "concurrent")
+	batch       = flag.Int("batch", 2, "batch")
 	shared_flag = [5]bool{false}
 )
 
@@ -85,16 +87,17 @@ func drop_partition(db *sql.DB, num int) {
 }
 
 func insert_data(db *sql.DB) {
-	insert_data_job(db, 8, 2, 0)
-	insert_data_job(db, 8, 2, 1)
-	insert_data_job(db, 8, 2, 2)
-	insert_data_job(db, 8, 2, 3)
-	insert_data_job(db, 8, 2, 4)
+	insert_data_job(db, 0)
+	insert_data_job(db, 1)
+	insert_data_job(db, 2)
+	insert_data_job(db, 3)
+	insert_data_job(db, 4)
 	fmt.Println("All insert job started...")
 }
 
-func insert_data_job(db *sql.DB, concurrent int, batch int, part_num int) {
-	for i := 0; i < concurrent; i++ {
+func insert_data_job(db *sql.DB, part_num int) {
+	local_batch := *batch
+	for i := 0; i < *concurrent; i++ {
 		conn, err := db.Conn(context.Background())
 		if err != nil {
 			fmt.Println(err)
@@ -104,8 +107,8 @@ func insert_data_job(db *sql.DB, concurrent int, batch int, part_num int) {
 			for {
 				id := part_num*10000 + rand.Intn(10000)
 				insert_sql := sql2
-				for i := 0; i < batch; i++ {
-					if i == batch-1 {
+				for i := 0; i < local_batch; i++ {
+					if i == local_batch-1 {
 						insert_sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v')", id+i, str, str, str, str, str)
 						break
 					} else {
