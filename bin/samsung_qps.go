@@ -52,7 +52,9 @@ func main() {
 	stop_partition(db)
 	fmt.Println("partition drop?")
 	fmt.Scanln()
-	drop_partition(db, 0)
+	drop_partition(db, 2)
+	drop_partition(db, 3)
+	drop_partition(db, 4)
 	fmt.Println("Enter to exit")
 	fmt.Scanln()
 }
