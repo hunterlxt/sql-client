@@ -45,11 +45,11 @@ func main() {
 	create_table(db)
 	insert_data(db)
 
-	fmt.Println("1. Which partition do you want to drop? [p0~p4]:")
+	fmt.Println("1. Which partition do you want to drop? [0~4]:")
 	var num int
 	fmt.Scan(&num)
 	drop_partition(db, num)
-	fmt.Println("2. Which partition do you want to drop? [p0~p4]:")
+	fmt.Println("2. Which partition do you want to drop? [0~4]:")
 	fmt.Scan(&num)
 	drop_partition(db, num)
 	fmt.Println("Enter to exit")
@@ -117,7 +117,7 @@ func insert_data_job(db *sql.DB, concurrent int, batch int, part_num int) {
 					fmt.Println(err)
 				}
 				if shared_flag[part_num] {
-					fmt.Println("stop insert into p", part_num)
+					fmt.Println("stop insert into partition", part_num)
 					break
 				}
 			}
