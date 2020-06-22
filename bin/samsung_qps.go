@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ip      = flag.String("ip", "127.0.0.1", "ip")
-	port    = flag.Int("port", 10000, "port")
-	db_name = flag.String("db", "test", "db")
+	ip          = flag.String("ip", "127.0.0.1", "ip")
+	port        = flag.Int("port", 10000, "port")
+	db_name     = flag.String("db", "test", "db")
+	shared_flag = [5]bool{false}
 )
 
 var (
@@ -45,17 +46,18 @@ func main() {
 	insert_data(db)
 
 	fmt.Println("1. Which partition do you want to drop? [p0~p4]:")
-	var name string
-	fmt.Scan(&name)
-	drop_partition(db, name)
+	var num int
+	fmt.Scan(&num)
+	drop_partition(db, num)
 	fmt.Println("2. Which partition do you want to drop? [p0~p4]:")
-	fmt.Scan(&name)
-	drop_partition(db, name)
+	fmt.Scan(&num)
+	drop_partition(db, num)
 	fmt.Println("Enter to exit")
 	fmt.Scanln()
 }
 
 func connect(ip string, port int, db string) *sql.DB {
+	fmt.Println("Ensure you have run \"drop table t\"")
 	dsn := fmt.Sprintf("root@tcp(%s:%d)/%s", ip, port, db)
 	fmt.Println("connecting", dsn)
 	dbConn, err := sql.Open("mysql", dsn)
@@ -73,8 +75,9 @@ func create_table(db *sql.DB) {
 	}
 }
 
-func drop_partition(db *sql.DB, name string) {
-	sql := sql3 + name
+func drop_partition(db *sql.DB, num int) {
+	shared_flag[num] = true
+	sql := sql3 + fmt.Sprintf("p%v", num)
 	_, err := db.Exec(sql)
 	if err != nil {
 		fmt.Println(err)
@@ -109,11 +112,14 @@ func insert_data_job(db *sql.DB, concurrent int, batch int, part_num int) {
 						insert_sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v'),", id+i, str, str, str, str, str)
 					}
 				}
-				ret, err := conn.ExecContext(context.Background(), insert_sql)
+				_, err := conn.ExecContext(context.Background(), insert_sql)
 				if err != nil {
 					fmt.Println(err)
 				}
-				ret.RowsAffected()
+				if shared_flag[part_num] {
+					fmt.Println("stop insert into p", part_num)
+					break
+				}
 			}
 		}()
 	}
