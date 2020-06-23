@@ -44,22 +44,14 @@ func main() {
 	flag.Parse()
 
 	db := connect(*ip, *port, *db_name)
-	create_table(db)
-	insert_data(db)
 
-	timer.Reset(10 * time.Hour)
-	<-timer.C
-	stop_all(db)
-
-	timer.Reset(1 * time.Minute)
-	<-timer.C
 	*concurrent = 64
 	*batch = 1
 	shared_flag[0] = false
 	insert_data_job(db, 0)
 
 	fmt.Println("partition drop p1 p2 p3?")
-	timer.Reset(30 * time.Minute)
+	timer.Reset(8 * time.Minute)
 	<-timer.C
 	drop_partition(db, 1)
 	drop_partition(db, 2)
