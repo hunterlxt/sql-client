@@ -21,7 +21,7 @@ var (
 	timer         = time.NewTimer(1 * time.Second)
 	enable_insert = flag.Bool("insert", false, "enable_insert")
 	insert_time   = flag.Int("insert_time", 6, "insert_time hour")
-	drop_test     = flag.Bool("insert", true, "drop_test")
+	drop_test     = flag.Bool("drop_test", true, "drop_test")
 )
 
 var (
