@@ -12,22 +12,25 @@ import (
 )
 
 var (
-	ip          = flag.String("ip", "127.0.0.1", "ip")
-	port        = flag.Int("port", 10000, "port")
-	db_name     = flag.String("db", "test", "db")
-	concurrent  = flag.Int("concurrent", 16, "concurrent")
-	batch       = flag.Int("batch", 32, "batch")
-	shared_flag = [4]bool{false}
-	timer       = time.NewTimer(1 * time.Second)
+	ip            = flag.String("ip", "127.0.0.1", "ip")
+	port          = flag.Int("port", 10000, "port")
+	db_name       = flag.String("db", "test", "db")
+	concurrent    = flag.Int("concurrent", 16, "concurrent for insert")
+	batch         = flag.Int("batch", 64, "batch for insert")
+	shared_flag   = [4]bool{false}
+	timer         = time.NewTimer(1 * time.Second)
+	enable_insert = flag.Bool("insert", false, "enable_insert")
+	insert_time   = flag.Int("insert_time", 6, "insert_time hour")
+	drop_test     = flag.Bool("insert", true, "drop_test")
 )
 
 var (
 	sql1 = `create table if not exists t (
 		id int not null,
 		c1 char(64),
-		c2 char(64),
+		c2 char(128),
 		c3 char(64),
-		c4 char(64),
+		c4 char(128),
 		c5 char(64)
 	)
 	PARTITION BY RANGE (id) (
@@ -45,25 +48,35 @@ func main() {
 
 	db := connect(*ip, *port, *db_name)
 
-	*concurrent = 64
-	*batch = 1
-	shared_flag[0] = false
-	insert_data_job(db, 0)
+	if *enable_insert {
+		fmt.Println("Ensure you have run \"drop table t\"")
+		create_table(db)
+		insert_data(db)
+		timer.Reset(time.Duration(*insert_time) * time.Hour)
+		<-timer.C
+		fmt.Println("Insert done")
+	}
 
-	fmt.Println("partition drop p1 p2 p3?")
-	timer.Reset(8 * time.Minute)
-	<-timer.C
-	drop_partition(db, 1)
-	drop_partition(db, 2)
-	drop_partition(db, 3)
+	if *drop_test {
+		*concurrent = 60
+		*batch = 1
+		shared_flag[0] = false
+		insert_data_job(db, 1)
 
-	fmt.Println("Enter to exit")
-	fmt.Scanln()
-
+		fmt.Println("waiting to drop p0 p2 p3...")
+		timer.Reset(30 * time.Minute)
+		<-timer.C
+		fmt.Println("start to drop", time.Now())
+		drop_partition(db, 0)
+		drop_partition(db, 2)
+		drop_partition(db, 3)
+		timer.Reset(30 * time.Minute)
+		<-timer.C
+		fmt.Println("All tests done")
+	}
 }
 
 func connect(ip string, port int, db string) *sql.DB {
-	fmt.Println("Ensure you have run \"drop table t\"")
 	dsn := fmt.Sprintf("root@tcp(%s:%d)/%s", ip, port, db)
 	fmt.Println("connecting", dsn)
 	dbConn, err := sql.Open("mysql", dsn)
@@ -104,6 +117,7 @@ func insert_data(db *sql.DB) {
 }
 
 func insert_data_job(db *sql.DB, part_num int) {
+	fmt.Println("Insert job to", part_num)
 	local_batch := *batch
 	for i := 0; i < *concurrent; i++ {
 		conn, err := db.Conn(context.Background())
@@ -128,7 +142,6 @@ func insert_data_job(db *sql.DB, part_num int) {
 					fmt.Println(err)
 				}
 				if shared_flag[part_num] {
-					fmt.Println("stop insert into partition", part_num)
 					break
 				}
 			}
