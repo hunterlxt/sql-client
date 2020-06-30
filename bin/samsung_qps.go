@@ -74,7 +74,7 @@ func main() {
 		drop_partition(db, 0)
 		drop_partition(db, 2)
 		drop_partition(db, 3)
-		timer.Reset(30 * time.Minute)
+		timer.Reset(40 * time.Minute)
 		<-timer.C
 		fmt.Println("All tests done")
 	}
