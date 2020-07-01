@@ -22,6 +22,7 @@ var (
 	enable_insert = flag.Bool("insert", false, "enable_insert")
 	insert_time   = flag.Int("insert_time", 6, "insert_time hour")
 	drop_test     = flag.Bool("drop_test", true, "drop_test")
+	drop_delay    = flag.Int("drop_delay", 45, "drop_delay")
 )
 
 var (
@@ -58,17 +59,13 @@ func main() {
 	}
 
 	if *drop_test {
-		fmt.Println("ready to insert... (5min)")
-		timer.Reset(5 * time.Minute)
-		<-timer.C
-
 		*concurrent = 60
 		*batch = 1
 		shared_flag[0] = false
 		insert_data_job(db, 1)
 
-		fmt.Println("waiting to drop... (35min)")
-		timer.Reset(35 * time.Minute)
+		fmt.Printf("waiting to drop... (%dmin)\n", *drop_delay)
+		timer.Reset(time.Duration(*drop_delay) * time.Minute)
 		<-timer.C
 		fmt.Println("start to drop", time.Now())
 		drop_partition(db, 0)
