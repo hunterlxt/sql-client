@@ -58,8 +58,8 @@ func main() {
 	}
 
 	if *drop_test {
-		fmt.Println("ready to insert... (10min)")
-		timer.Reset(10 * time.Minute)
+		fmt.Println("ready to insert... (5min)")
+		timer.Reset(5 * time.Minute)
 		<-timer.C
 
 		*concurrent = 60
@@ -67,8 +67,8 @@ func main() {
 		shared_flag[0] = false
 		insert_data_job(db, 1)
 
-		fmt.Println("waiting to drop... (30min)")
-		timer.Reset(30 * time.Minute)
+		fmt.Println("waiting to drop... (35min)")
+		timer.Reset(35 * time.Minute)
 		<-timer.C
 		fmt.Println("start to drop", time.Now())
 		drop_partition(db, 0)
