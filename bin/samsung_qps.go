@@ -166,7 +166,14 @@ func readInsertJob(db *sql.DB, partNum int) {
 			for {
 				for i := partNum * 5000; i < (partNum+1)*5000; i++ {
 					sql := sql2
-					sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v')", i, str, str, str, str, str)
+					for i := 0; i < *batch; i++ {
+						if i == *batch-1 {
+							sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v')", i, str, str, str, str, str)
+							break
+						} else {
+							sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v'),", i, str, str, str, str, str)
+						}
+					}
 					_, err := conn.ExecContext(context.Background(), sql)
 					if err != nil {
 						fmt.Println(err)
