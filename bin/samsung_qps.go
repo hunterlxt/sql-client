@@ -61,10 +61,7 @@ func main() {
 	}
 
 	if *dropTest {
-		*concurrent = 60
-		*batch = 1
-		shareFlag[0] = false
-		insertJob(db, 1)
+		readInsertJob(db, 1)
 
 		fmt.Printf("waiting to drop... (%dmin)\n", *dropDelay)
 		timer.Reset(time.Duration(*dropDelay) * time.Minute)
