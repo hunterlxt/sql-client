@@ -24,24 +24,29 @@ var (
 	dropTest          = flag.Bool("drop_test", true, "drop_test")
 	dropDelay         = flag.Int("drop_delay", 45, "drop_delay")
 	enableSelectCount = flag.Bool("enable_count", false, "enable Select Count")
+	letters           = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
 var (
 	sql1 = `create table if not exists t (
 		id int not null,
-		c1 char(64),
-		c2 char(128),
+		c1 char(32),
+		c2 char(32),
 		c3 char(64),
-		c4 char(128),
-		c5 char(64)
+		c4 char(64),
+		c5 char(64),
+		c6 char(64),
+		t1 timestamp not null default current_timestamp,
+		t2 timestamp not null default current_timestamp,
+		PRIMARY KEY (id, t1, c1, c2)
 	)
 	PARTITION BY RANGE (id) (
-		PARTITION p0 VALUES LESS THAN (5000),
-		PARTITION p1 VALUES LESS THAN (10000),
-		PARTITION p2 VALUES LESS THAN (15000),
+		PARTITION p0 VALUES LESS THAN (1000000),
+		PARTITION p1 VALUES LESS THAN (2000000),
+		PARTITION p2 VALUES LESS THAN (3000000),
 		PARTITION p3 VALUES LESS THAN MAXVALUE
 	)`
-	sql2 = `insert into t values`
+	sql2 = `insert into t(id, c1, c2, c3, c4, c5, c6) values`
 	sql3 = `ALTER TABLE t DROP PARTITION `
 	sql4 = `select count(*) from t`
 )
@@ -61,7 +66,7 @@ func main() {
 	}
 
 	if *dropTest {
-		readInsertJob(db, 1)
+		insertJob(db, 1)
 
 		fmt.Printf("waiting to drop... (%dmin)\n", *dropDelay)
 		timer.Reset(time.Duration(*dropDelay) * time.Minute)
@@ -117,7 +122,7 @@ func insertData(db *sql.DB) {
 }
 
 func insertJob(db *sql.DB, partNum int) {
-	fmt.Println("Insert job to", partNum)
+	fmt.Println("Insert job to partition", partNum)
 	local := *batch
 	for i := 0; i < *concurrent; i++ {
 		conn, err := db.Conn(context.Background())
@@ -125,16 +130,17 @@ func insertJob(db *sql.DB, partNum int) {
 			fmt.Println(err)
 		}
 		go func() {
-			str := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+"
 			for {
-				id := partNum*5000 + rand.Intn(5000)
+				id := partNum*1000000 + rand.Intn(1000000-local-1)
 				sql := sql2
+				str32 := randSeq(32)
+				str64 := randSeq(64)
 				for i := 0; i < local; i++ {
 					if i == local-1 {
-						sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v')", id+i, str, str, str, str, str)
+						sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v', '%v')", id+i, str32, str32, str64, str64, str64, str64)
 						break
 					} else {
-						sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v'),", id+i, str, str, str, str, str)
+						sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v', '%v'),", id+i, str32, str32, str64, str64, str64, str64)
 					}
 				}
 				_, err := conn.ExecContext(context.Background(), sql)
@@ -149,37 +155,10 @@ func insertJob(db *sql.DB, partNum int) {
 	}
 }
 
-func readInsertJob(db *sql.DB, partNum int) {
-	if *enableSelectCount {
-		fmt.Println("Select count(*) ...")
-		db.Exec(sql4)
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
 	}
-	fmt.Println("Read and insert job to", partNum)
-
-	for i := 0; i < *concurrent; i++ {
-		conn, err := db.Conn(context.Background())
-		if err != nil {
-			fmt.Println(err)
-		}
-		go func() {
-			str := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+"
-			for {
-				for i := partNum * 5000; i < (partNum+1)*5000; i++ {
-					sql := sql2
-					for i := 0; i < *batch; i++ {
-						if i == *batch-1 {
-							sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v')", i, str, str, str, str, str)
-							break
-						} else {
-							sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v'),", i, str, str, str, str, str)
-						}
-					}
-					_, err := conn.ExecContext(context.Background(), sql)
-					if err != nil {
-						fmt.Println(err)
-					}
-				}
-			}
-		}()
-	}
+	return string(b)
 }
