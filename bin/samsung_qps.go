@@ -23,7 +23,7 @@ var (
 	dropDelay    = flag.Int("drop_delay", 45, "drop_delay")
 	selectCount  = flag.Bool("select_count", false, "select_count before insert")
 	shareFlag    = [4]bool{false}
-	timer        = time.NewTimer(1 * time.Second)
+	timer        = time.NewTimer(1 * time.Hour)
 	letters      = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
