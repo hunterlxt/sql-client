@@ -20,7 +20,7 @@ var (
 	enableInsert = flag.Bool("insert", false, "enable_insert")
 	insertTime   = flag.Int("insert_time", 6, "insert_time hour")
 	dropTest     = flag.Bool("drop_test", true, "drop_test")
-	dropDelay    = flag.Int("drop_delay", 35, "drop_delay")
+	dropDelay    = flag.Int("drop_delay", 25, "drop_delay")
 	selectCount  = flag.Bool("select_count", false, "select_count before insert")
 	shareFlag    = [4]bool{false}
 	timer        = time.NewTimer(1 * time.Hour)
