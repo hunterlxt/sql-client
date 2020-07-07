@@ -12,20 +12,19 @@ import (
 )
 
 var (
-	ip                = flag.String("ip", "127.0.0.1", "ip")
-	port              = flag.Int("port", 10000, "port")
-	dbName            = flag.String("db", "test", "db")
-	concurrent        = flag.Int("concurrent", 16, "concurrent for insert")
-	batch             = flag.Int("batch", 64, "batch for insert")
-	enableInsert      = flag.Bool("insert", false, "enable_insert")
-	insertTime        = flag.Int("insert_time", 6, "insert_time hour")
-	dropTest          = flag.Bool("drop_test", true, "drop_test")
-	dropDelay         = flag.Int("drop_delay", 45, "drop_delay")
-	enableSelectCount = flag.Bool("enable_count", false, "enable Select Count")
-	selectCount       = flag.Bool("select_count", true, "select_count before drop test")
-	shareFlag         = [4]bool{false}
-	timer             = time.NewTimer(1 * time.Second)
-	letters           = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	ip           = flag.String("ip", "127.0.0.1", "ip")
+	port         = flag.Int("port", 10000, "port")
+	dbName       = flag.String("db", "test", "db")
+	concurrent   = flag.Int("concurrent", 16, "concurrent for insert")
+	batch        = flag.Int("batch", 64, "batch for insert")
+	enableInsert = flag.Bool("insert", false, "enable_insert")
+	insertTime   = flag.Int("insert_time", 6, "insert_time hour")
+	dropTest     = flag.Bool("drop_test", true, "drop_test")
+	dropDelay    = flag.Int("drop_delay", 45, "drop_delay")
+	selectCount  = flag.Bool("select_count", false, "select_count before insert")
+	shareFlag    = [4]bool{false}
+	timer        = time.NewTimer(1 * time.Second)
+	letters      = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
 var (
@@ -124,13 +123,13 @@ func insertData(db *sql.DB) {
 
 func insertJob(db *sql.DB, partNum int) {
 	if *selectCount {
-		fmt.Println("Select count for loading block cache...")
+		fmt.Println("Select count for loading block cache...", time.Now())
 		_, err := db.Exec(sql4)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
-	fmt.Println("Insert job to partition", partNum)
+	fmt.Println("Insert job to partition", partNum, time.Now())
 	local := *batch
 	for i := 0; i < *concurrent; i++ {
 		conn, err := db.Conn(context.Background())
