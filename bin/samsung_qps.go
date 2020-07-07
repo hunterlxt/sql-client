@@ -60,6 +60,7 @@ func main() {
 		fmt.Println("Ensure you have run \"drop table t\"")
 		createTable(db)
 		insertData(db)
+		fmt.Printf("Wait for %dhour\n", *insertTime)
 		timer.Reset(time.Duration(*insertTime) * time.Hour)
 		<-timer.C
 		fmt.Println("Insert done")
