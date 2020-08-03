@@ -51,7 +51,7 @@ var (
 
 func main() {
 	flag.Parse()
-
+	rand.Seed(time.Now().Unix())
 	db := connect(*ip, *port, *dbName)
 
 	if *enableInsert {
@@ -87,7 +87,6 @@ func connect(ip string, port int, db string) *sql.DB {
 }
 
 func createTable(db *sql.DB) {
-	rand.Seed(time.Now().Unix())
 	_, err := db.Exec(sql1)
 	if err != nil {
 		fmt.Println(err)
