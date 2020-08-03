@@ -15,12 +15,12 @@ var (
 	ip           = flag.String("ip", "127.0.0.1", "ip")
 	port         = flag.Int("port", 10000, "port")
 	dbName       = flag.String("db", "test", "db")
-	concurrent   = flag.Int("concurrent", 16, "concurrent for insert")
+	concurrent   = flag.Int("concurrent", 32, "concurrent for insert")
 	batch        = flag.Int("batch", 64, "batch for insert")
 	enableInsert = flag.Bool("insert", false, "enable_insert")
-	insertTime   = flag.Int("insert_time", 6, "insert_time hour")
+	insertTime   = flag.Int("insert_time", 10, "insert_time hour")
 	dropTest     = flag.Bool("drop_test", true, "drop_test")
-	dropDelay    = flag.Int("drop_delay", 25, "drop_delay")
+	dropDelay    = flag.Int("drop_delay", 1, "drop_delay")
 	selectCount  = flag.Bool("select_count", false, "select_count before insert")
 	shareFlag    = [4]bool{false}
 	timer        = time.NewTimer(1 * time.Hour)
@@ -41,10 +41,8 @@ var (
 		PRIMARY KEY (id, t1, c1, c2)
 	)
 	PARTITION BY RANGE (id) (
-		PARTITION p0 VALUES LESS THAN (1000000),
-		PARTITION p1 VALUES LESS THAN (2000000),
-		PARTITION p2 VALUES LESS THAN (3000000),
-		PARTITION p3 VALUES LESS THAN MAXVALUE
+		PARTITION p0 VALUES LESS THAN (10000000),
+		PARTITION p1 VALUES LESS THAN (MAXVALUE)
 	)`
 	sql2 = `insert into t(id, c1, c2, c3, c4, c5, c6) values`
 	sql3 = `ALTER TABLE t DROP PARTITION `
@@ -57,7 +55,6 @@ func main() {
 	db := connect(*ip, *port, *dbName)
 
 	if *enableInsert {
-		fmt.Println("Ensure you have run \"drop table t\"")
 		createTable(db)
 		insertData(db)
 		fmt.Printf("Wait for %dhour\n", *insertTime)
@@ -68,14 +65,11 @@ func main() {
 
 	if *dropTest {
 		insertJob(db, 1)
-
 		fmt.Printf("waiting to drop... (%dmin)\n", *dropDelay)
 		timer.Reset(time.Duration(*dropDelay) * time.Minute)
 		<-timer.C
 		fmt.Println("start to drop", time.Now())
 		dropPartition(db, 0)
-		dropPartition(db, 2)
-		dropPartition(db, 3)
 		timer.Reset(40 * time.Minute)
 		<-timer.C
 		fmt.Println("All tests done")
@@ -116,9 +110,6 @@ func stopAll(db *sql.DB) {
 
 func insertData(db *sql.DB) {
 	insertJob(db, 0)
-	insertJob(db, 1)
-	insertJob(db, 2)
-	insertJob(db, 3)
 	fmt.Println("All insert job started...")
 }
 
@@ -139,7 +130,7 @@ func insertJob(db *sql.DB, partNum int) {
 		}
 		go func() {
 			for {
-				id := partNum*1000000 + rand.Intn(1000000-local-1)
+				id := partNum*10000000 + rand.Intn(10000000-local-1)
 				sql := sql2
 				str32 := randSeq(32)
 				str64 := randSeq(64)
