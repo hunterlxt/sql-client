@@ -64,7 +64,7 @@ func main() {
 	}
 
 	if *dropTest {
-		insertJob(db, 1)
+		insertJob(db, 1, *batch, *concurrent)
 		fmt.Printf("waiting to drop... (%dmin)\n", *dropDelay)
 		timer.Reset(time.Duration(*dropDelay) * time.Minute)
 		<-timer.C
@@ -109,11 +109,12 @@ func stopAll(db *sql.DB) {
 }
 
 func insertData(db *sql.DB) {
-	insertJob(db, 0)
+	insertJob(db, 0, *batch, *concurrent)
+	insertJob(db, 1, 1, 2)
 	fmt.Println("All insert job started...")
 }
 
-func insertJob(db *sql.DB, partNum int) {
+func insertJob(db *sql.DB, partNum int, lBatch int, lConcurrent int) {
 	if *selectCount {
 		fmt.Println("Select count for loading block cache...", time.Now())
 		_, err := db.Exec(sql4)
@@ -122,20 +123,19 @@ func insertJob(db *sql.DB, partNum int) {
 		}
 	}
 	fmt.Println("Insert job to partition", partNum, time.Now())
-	local := *batch
-	for i := 0; i < *concurrent; i++ {
+	for i := 0; i < lConcurrent; i++ {
 		conn, err := db.Conn(context.Background())
 		if err != nil {
 			fmt.Println(err)
 		}
 		go func() {
 			for {
-				id := partNum*10000000 + rand.Intn(10000000-local-1)
+				id := partNum*10000000 + rand.Intn(10000000-lBatch-1)
 				sql := sql2
 				str32 := randSeq(32)
 				str64 := randSeq(64)
-				for i := 0; i < local; i++ {
-					if i == local-1 {
+				for i := 0; i < lBatch; i++ {
+					if i == lBatch-1 {
 						sql += fmt.Sprintf(" (%v, '%v', '%v', '%v', '%v', '%v', '%v')", id+i, str32, str32, str64, str64, str64, str64)
 						break
 					} else {
