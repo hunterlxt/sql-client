@@ -64,13 +64,13 @@ func main() {
 	}
 
 	if *dropTest {
-		insertJob(db, 1, *batch, *concurrent)
+		insertJob(db, 0, *batch, *concurrent)
 		fmt.Printf("waiting to drop... (%dmin)\n", *dropDelay)
 		timer.Reset(time.Duration(*dropDelay) * time.Minute)
 		<-timer.C
 		fmt.Println("start to drop", time.Now())
 		dropPartition(db, 0)
-		timer.Reset(40 * time.Minute)
+		timer.Reset(35 * time.Minute)
 		<-timer.C
 		fmt.Println("All tests done")
 	}
@@ -108,8 +108,8 @@ func stopAll(db *sql.DB) {
 }
 
 func insertData(db *sql.DB) {
-	insertJob(db, 0, *batch, *concurrent)
-	insertJob(db, 1, 1, 2)
+	insertJob(db, 1, *batch, *concurrent)
+	insertJob(db, 0, 2, 2)
 	fmt.Println("All insert job started...")
 }
 
