@@ -69,7 +69,7 @@ func main() {
 		timer.Reset(time.Duration(*dropDelay) * time.Minute)
 		<-timer.C
 		fmt.Println("start to drop", time.Now())
-		dropPartition(db, 0)
+		dropPartition(db, 1)
 		timer.Reset(35 * time.Minute)
 		<-timer.C
 		fmt.Println("All tests done")
